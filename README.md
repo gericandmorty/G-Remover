@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# G-Remover Frontend Portal
+
+A premium, modern web interface for G-Remover—a high-performance, automatic background removal platform. Built with Next.js and styled using Tailwind CSS v4, G-Remover provides a sleek, responsive, and interactive experience for managing and processing photo backgrounds.
+
+> [!WARNING]
+> **Status: Coming Soon / Under Active Development**
+> G-Remover is currently in development. The landing portal, user authentication flow, and interactive dashboard workspace mockup are completed. Integration with production AI background-removal models is coming soon!
+
+---
+
+## Tech Stack and Features
+
+- **Frontend**: Next.js 16 (App Router) & Tailwind CSS v4
+- **Backend API**: Powered by a lightning-fast Rust Axum server
+- **Database**: MongoDB for secure user account storage
+- **Authentication**: JWT (JSON Web Token) saved locally, featuring strict real-time password complexity validation checks (length, case, numbers, special characters)
+- **User Dashboard**: Modern glassmorphic user workspace with:
+  - Interactive file dropzones (drag-and-drop support)
+  - Simulated AI pipeline step-by-step progress tracking
+  - Token-based usage indicators
+  - Mock processing history logs
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### 1. Prerequisites
+
+Ensure you have Node.js (v18+) and npm installed.
+
+### 2. Installation
+
+Navigate to the frontend directory and install the dependencies:
+
+```bash
+cd frontend
+npm install
+```
+
+### 3. Environment Variables Setup
+
+Create a `.env.local` file in the `frontend` root directory to map your API backend server:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8080
+```
+
+### 4. Running the Development Server
+
+Start the Next.js dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 in your browser to see the landing page.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```text
+frontend/
+├── app/
+│   ├── (pages)/
+│   │   ├── (landing)/   # Beautiful GitHub-themed landing page
+│   │   └── dashboard/   # Secure user dashboard & AI workspace
+│   ├── auth/
+│   │   ├── login/       # User sign-in with redirect flows
+│   │   └── register/    # Sign-up with real-time password requirement checklists
+│   ├── components/      # Shared components (NavBar, etc.)
+│   ├── layout.tsx       # Root layout configuration
+│   └── globals.css      # Core global stylesheet
+├── public/              # Static media and assets
+├── package.json         # Scripts and project dependencies
+└── README.md            # Frontend documentation
+```
