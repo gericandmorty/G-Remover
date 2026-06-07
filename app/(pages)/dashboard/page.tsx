@@ -1,402 +1,310 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { getCookie } from "../../components/cookies";
 
-interface MockFile {
-  id: string;
-  name: string;
-  size: string;
-  time: string;
-}
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export default function DashboardPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [token, setToken] = useState<string>("");
+
+  // Upload / processing state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState("");
   const [progress, setProgress] = useState(0);
-  const [outputImage, setOutputImage] = useState<string | null>(null);
-  const [apiKeyVisible, setApiKeyVisible] = useState(false);
-  
-  const [historyFiles, setHistoryFiles] = useState<MockFile[]>([
-    { id: "1", name: "sneaker_cutout.png", size: "142 KB", time: "10m ago" },
-    { id: "2", name: "avatar_portrait.png", size: "89 KB", time: "2h ago" },
-    { id: "3", name: "tesla_model3_transparent.png", size: "1.2 MB", time: "1d ago" },
-  ]);
+  const [outputUrl, setOutputUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const router = useRouter();
+  const dragRef = useRef<HTMLDivElement>(null);
 
-  // Route guard validation check
+  // Optional token loading on mount
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      // Not logged in -> redirect to login page
-      router.push("/auth/login");
-    } else {
-      setIsAuthenticated(true);
-      setIsLoading(false);
+    const t = getCookie("token");
+    if (t) {
+      setToken(t);
     }
-  }, [router]);
+    setIsLoading(false);
+  }, []);
 
-  // Handle local image upload selection
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        setSelectedImage(reader.result as string);
-        setOutputImage(null);
-        simulateAiRemoval();
-      };
-      reader.readAsDataURL(file);
+  // Fake progress ticker while waiting for the backend
+  const startProgressTicker = () => {
+    setProgress(0);
+    const steps = [
+      { p: 15, s: "Uploading image..." },
+      { p: 35, s: "Parsing image buffer..." },
+      { p: 55, s: "Isolating foreground contours..." },
+      { p: 90, s: "Generating transparency channel..." },
+    ];
+    steps.forEach((step, i) => {
+      setTimeout(() => {
+        setProgress(step.p);
+        setProcessingStep(step.s);
+      }, (i + 1) * 400);
+    });
+  };
+
+  // Call the real backend API
+  const runRemoval = async (file: File) => {
+    setIsProcessing(true);
+    setOutputUrl(null);
+    setError(null);
+    startProgressTicker();
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const headers: Record<string, string> = {};
+      if (token && token !== "undefined" && token !== "null") {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${API_BASE}/api/v1/remove-background`, {
+        method: "POST",
+        headers,
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Server error ${res.status}`);
+      }
+
+      // Backend returns raw PNG bytes with content-type image/png
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+
+      setProgress(100);
+      setProcessingStep("Done!");
+
+      setTimeout(() => {
+        setOutputUrl(url);
+        setIsProcessing(false);
+      }, 400);
+    } catch (err: unknown) {
+      setIsProcessing(false);
+      setProgress(0);
+      setError(err instanceof Error ? err.message : "Unknown error occurred.");
     }
   };
 
-  // Simulate AI removal process
-  const simulateAiRemoval = () => {
-    setIsProcessing(true);
-    setProgress(0);
-    setProcessingStep("Uploading to Edge Node...");
+  const handleFileSelect = (file: File) => {
+    // Revoke old preview URL to avoid memory leaks
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (outputUrl) URL.revokeObjectURL(outputUrl);
 
-    const steps = [
-      { p: 25, s: "Parsing image buffer..." },
-      { p: 50, s: "Isolating foreground contours..." },
-      { p: 75, s: "Generating alpha transparency channel..." },
-      { p: 100, s: "Finalizing asset stream..." }
-    ];
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setOutputUrl(null);
+    setError(null);
+    runRemoval(file);
+  };
 
-    steps.forEach((stepObj, index) => {
-      setTimeout(() => {
-        setProgress(stepObj.p);
-        setProcessingStep(stepObj.s);
-        
-        if (stepObj.p === 100) {
-          setTimeout(() => {
-            setIsProcessing(false);
-            // Setup output image (simulated cutout - we just overlay the subject)
-            setOutputImage(selectedImage);
-            
-            // Add to file history
-            const newFile: MockFile = {
-              id: Date.now().toString(),
-              name: `g_remover_${Math.floor(Math.random() * 1000)}.png`,
-              size: "244 KB",
-              time: "Just now"
-            };
-            setHistoryFiles((prev) => [newFile, ...prev]);
-          }, 400);
-        }
-      }, (index + 1) * 600);
-    });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) handleFileSelect(e.target.files[0]);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    dragRef.current?.classList.add("border-[#58a6ff]");
+  };
+
+  const handleDragLeave = () => {
+    dragRef.current?.classList.remove("border-[#58a6ff]");
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        setSelectedImage(reader.result as string);
-        setOutputImage(null);
-        simulateAiRemoval();
-      };
-      reader.readAsDataURL(file);
-    }
+    dragRef.current?.classList.remove("border-[#58a6ff]");
+    if (e.dataTransfer.files?.[0]) handleFileSelect(e.dataTransfer.files[0]);
   };
 
-  const handleDeleteHistory = (id: string) => {
-    setHistoryFiles((prev) => prev.filter(f => f.id !== id));
+  const handleClear = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (outputUrl) URL.revokeObjectURL(outputUrl);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setOutputUrl(null);
+    setError(null);
   };
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
-        <div className="w-10 h-10 rounded-full border-4 border-[#30363d] border-t-[#58a6ff] animate-spin"></div>
+      <div className="flex-1 bg-[#0d1117] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full border-4 border-[#30363d] border-t-[#58a6ff] animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans antialiased pb-16 selection:bg-[#58a6ff]/30 selection:text-white">
-      {/* 1. Header Banner */}
-      <section className="bg-[#161b22] border-b border-[#30363d] py-6">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
-              <span>Developer Dashboard</span>
-            </h1>
-            <p className="text-xs text-[#8b949e] mt-1">Welcome back. Process images and manage API integration tokens.</p>
-          </div>
-          
-          {/* Quota Widgets */}
-          <div className="flex gap-4 text-xs">
-            <div className="bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-2 flex flex-col">
-              <span className="text-[#8b949e]">Monthly API Quota</span>
-              <strong className="text-white mt-0.5">14 / 1,000 operations</strong>
-            </div>
-            <div className="bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-2 flex flex-col">
-              <span className="text-[#8b949e]">Storage Usage</span>
-              <strong className="text-white mt-0.5">5.4 MB / 100 MB</strong>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. Main Dashboard Layout */}
-      <main className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <div className="flex-1 bg-[#0d1117] text-[#c9d1d9] font-sans antialiased flex flex-col items-center justify-center p-6 selection:bg-[#58a6ff]/30 selection:text-white">
+      <div className="w-full max-w-4xl flex flex-col gap-8 py-8 animate-fade-in">
         
-        {/* Left Column: Drag & Drop Sandbox Workspace (75%) */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
+        {/* Title / Description */}
+        <div className="text-center">
+          <h1 className="text-4xl font-extrabold text-white tracking-tight bg-gradient-to-r from-white via-[#e2e8f0] to-[#8b949e] bg-clip-text text-transparent">
+            Remove Image Background
+          </h1>
+          <p className="mt-3 text-sm text-[#8b949e] max-w-md mx-auto leading-relaxed">
+            Upload an image and watch the background disappear instantly. Powered by ONNX Runtime.
+          </p>
+        </div>
+
+        {/* AI Background Removal Workspace Card */}
+        <div className="bg-[#161b22] border border-[#30363d] rounded-2xl overflow-hidden shadow-2xl transition-all duration-300">
           
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden shadow-xl">
-            {/* Box Header */}
-            <div className="bg-[#161b22] px-5 py-4 border-b border-[#30363d] flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <svg viewBox="0 0 16 16" width="16" height="16" className="fill-[#58a6ff]">
-                  <path d="M11.5 8a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm0-1.5a2 2 0 1 1 0-4 2 2 0 0 1 0 4z M1 2.75C1 1.784 1.784 1 2.75 1h5.5a.75.75 0 0 1 0 1.5h-5.5a.25.25 0 0 0-.25.25v10.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-5.5a.75.75 0 0 1 1.5 0v5.5A1.75 1.75 0 0 1 13.25 15H2.75A1.75 1.75 0 0 1 1 13.25V2.75z"></path>
+          {/* Card Header */}
+          <div className="px-6 py-4 border-b border-[#30363d] flex items-center justify-between bg-[#161b22]">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2.5">
+              <svg viewBox="0 0 16 16" width="16" height="16" className="fill-[#58a6ff]">
+                <path d="M11.5 8a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm0-1.5a2 2 0 1 1 0-4 2 2 0 0 1 0 4z M1 2.75C1 1.784 1.784 1 2.75 1h5.5a.75.75 0 0 1 0 1.5h-5.5a.25.25 0 0 0-.25.25v10.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-5.5a.75.75 0 0 1 1.5 0v5.5A1.75 1.75 0 0 1 13.25 15H2.75A1.75 1.75 0 0 1 1 13.25V2.75z" />
+              </svg>
+              AI Background Removal Workspace
+            </h3>
+            <span className="text-[10px] bg-[#3fb950]/10 text-[#3fb950] border border-[#3fb950]/20 px-2.5 py-0.5 rounded-full font-semibold">
+              Live API
+            </span>
+          </div>
+
+          <div className="p-6 md:p-8 flex flex-col gap-6">
+            
+            {/* Error Banner */}
+            {error && (
+              <div className="bg-[#f85149]/10 border border-[#f85149]/30 rounded-lg px-4 py-3 text-xs text-[#f85149] flex items-start gap-2.5 animate-fadeIn">
+                <svg viewBox="0 0 16 16" width="14" height="14" className="fill-[#f85149] flex-shrink-0 mt-0.5">
+                  <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.25-3.25a.75.75 0 0 1 1.5 0V8a.75.75 0 0 1-1.5 0V4.75zm.75 5.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
                 </svg>
-                <span>AI Background Removal Workspace</span>
-              </h3>
-            </div>
+                <span><strong>API Error:</strong> {error}</span>
+              </div>
+            )}
 
-            {/* Box Canvas Workspace */}
-            <div className="p-6 flex flex-col gap-6">
-              
-              {!selectedImage ? (
-                /* Drag and Drop Zone Empty State */
-                <div
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  className="border-2 border-dashed border-[#30363d] hover:border-[#8b949e] rounded-xl p-12 text-center flex flex-col items-center justify-center gap-4 cursor-pointer transition-all bg-[#0d1117]/50"
-                  onClick={() => document.getElementById("file-upload")?.click()}
-                >
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                  <div className="w-12 h-12 rounded-full bg-[#161b22] border border-[#30363d] flex items-center justify-center text-[#8b949e]">
-                    <svg viewBox="0 0 16 16" width="24" height="24" className="fill-current">
-                      <path d="M2 1.75C2 .784 2.784 0 3.75 0h8.5C13.216 0 14 .784 14 1.75v12.5A1.75 1.75 0 0 1 12.25 16H3.75A1.75 1.75 0 0 1 2 14.25V1.75zm1.5.25v11.25c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V2a.25.25 0 0 0-.25-.25H3.75a.25.25 0 0 0-.25.25zM10.5 1.8L13.7 5H10.5a.25.25 0 0 1-.25-.25V1.8z"></path>
-                    </svg>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-bold text-white">Select image file, or drag and drop</span>
-                    <span className="text-xs text-[#8b949e]">PNG, JPG, or WEBP up to 10MB</span>
-                  </div>
-                  <button className="bg-[#21262d] border border-[#30363d] hover:bg-[#30363d] text-white font-semibold text-xs px-3 py-1.5 rounded-md transition-all">
-                    Browse Files
-                  </button>
+            {!selectedFile ? (
+              /* Drop Zone */
+              <div
+                ref={dragRef}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById("file-upload")?.click()}
+                className="border-2 border-dashed border-[#30363d] hover:border-[#8b949e] rounded-xl p-16 text-center flex flex-col items-center justify-center gap-5 cursor-pointer transition-all duration-300 bg-[#0d1117]/50 hover:bg-[#161b22]/30 group"
+              >
+                <input
+                  id="file-upload"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleInputChange}
+                  className="hidden"
+                />
+                <div className="w-16 h-16 rounded-full bg-[#161b22] border border-[#30363d] flex items-center justify-center text-[#8b949e] group-hover:scale-105 group-hover:border-[#8b949e] transition-all duration-300">
+                  <svg viewBox="0 0 16 16" width="28" height="28" className="fill-current">
+                    <path d="M2 1.75C2 .784 2.784 0 3.75 0h8.5C13.216 0 14 .784 14 1.75v12.5A1.75 1.75 0 0 1 12.25 16H3.75A1.75 1.75 0 0 1 2 14.25V1.75zm1.5.25v11.25c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V2a.25.25 0 0 0-.25-.25H3.75a.25.25 0 0 0-.25.25z" />
+                  </svg>
                 </div>
-              ) : (
-                /* Interactive Canvas showing active upload */
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Left Column: Original Uploaded */}
-                  <div className="flex flex-col gap-2">
-                    <span className="text-xs font-semibold text-[#8b949e]">Original Backdrop</span>
-                    <div className="relative border border-[#30363d] rounded-xl overflow-hidden aspect-[4/3] bg-[#0d1117] flex items-center justify-center p-2">
-                      <img src={selectedImage} alt="Uploaded source" className="max-w-full max-h-full object-contain rounded" />
-                    </div>
-                  </div>
-
-                  {/* Right Column: Transparent Cutout Output */}
-                  <div className="flex flex-col gap-2">
-                    <span className="text-xs font-semibold text-[#8b949e]">AI Cutout Output</span>
-                    <div className="relative border border-[#30363d] rounded-xl overflow-hidden aspect-[4/3] bg-[#0d1117] flex items-center justify-center p-2 select-none">
-                      {isProcessing ? (
-                        /* Processing Loader Overlay */
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10">
-                          <div className="w-8 h-8 rounded-full border-3 border-[#30363d] border-t-[#58a6ff] animate-spin"></div>
-                          <div className="text-xs font-semibold text-white">{processingStep}</div>
-                          <div className="text-[10px] text-[#8b949e] font-mono">{progress}%</div>
-                        </div>
-                      ) : null}
-
-                      {/* Transparent checkerboard background */}
-                      <div
-                        className="absolute inset-0 z-0 bg-[size:16px_16px] bg-[position:0_0,8px_8px] opacity-10"
-                        style={{
-                          backgroundImage:
-                            "linear-gradient(45deg, #8b949e 25%, transparent 25%, transparent 75%, #8b949e 75%, #8b949e), linear-gradient(45deg, #8b949e 25%, #0d1117 25%, #0d1117 75%, #8b949e 75%, #8b949e)",
-                        }}
-                      />
-
-                      {outputImage ? (
-                        /* Cutout output rendered */
-                        <img
-                          src={outputImage}
-                          alt="Transparent cutout result"
-                          className="max-w-full max-h-full object-contain rounded relative z-10 animate-fade-in drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
-                          style={{
-                            // Simple CSS silhouette mask effect to simulate background removal
-                            maskImage: "radial-gradient(ellipse at center, black 60%, transparent 100%)",
-                            WebkitMaskImage: "radial-gradient(ellipse at center, black 60%, transparent 100%)"
-                          }}
-                        />
-                      ) : (
-                        <div className="text-xs text-[#484f58] italic relative z-10">Awaiting processing...</div>
-                      )}
-                    </div>
-                  </div>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm font-bold text-white group-hover:text-[#58a6ff] transition-colors">
+                    Drop image here, or click to browse
+                  </span>
+                  <span className="text-xs text-[#8b949e]">PNG, JPG, or WEBP — max 10 MB</span>
                 </div>
-              )}
-
-              {/* Action buttons when image is loaded */}
-              {selectedImage && !isProcessing && (
-                <div className="flex items-center justify-between gap-4 border-t border-[#30363d] pt-4 mt-2">
-                  <button
-                    onClick={() => setSelectedImage(null)}
-                    className="text-xs font-semibold text-[#f85149] hover:underline hover:text-[#f85149]/80 cursor-pointer"
-                  >
-                    Clear Image
-                  </button>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={simulateAiRemoval}
-                      className="bg-[#21262d] border border-[#30363d] hover:bg-[#30363d] text-white font-semibold text-xs px-4 py-2 rounded-md transition-all cursor-pointer"
-                    >
-                      Re-run Extraction
-                    </button>
-                    {outputImage && (
-                      <a
-                        href={outputImage}
-                        download="g_remover_transparent.png"
-                        className="bg-[#238636] hover:bg-[#2ea043] text-white font-bold text-xs px-4 py-2 rounded-md transition-all shadow-sm flex items-center gap-1.5"
-                      >
-                        Download Cutout
-                      </a>
+                <button className="bg-[#21262d] border border-[#30363d] hover:bg-[#30363d] text-white font-semibold text-xs px-4 py-2.5 rounded-lg transition-all">
+                  Browse Files
+                </button>
+              </div>
+            ) : (
+              /* Before / After Preview */
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Original */}
+                <div className="flex flex-col gap-2 animate-fade-in">
+                  <span className="text-xs font-semibold text-[#8b949e]">Original</span>
+                  <div className="relative border border-[#30363d] rounded-xl overflow-hidden aspect-[4/3] bg-[#0d1117] flex items-center justify-center p-2">
+                    {previewUrl && (
+                      <img src={previewUrl} alt="Original" className="max-w-full max-h-full object-contain rounded" />
                     )}
                   </div>
                 </div>
-              )}
 
-            </div>
-          </div>
+                {/* Output */}
+                <div className="flex flex-col gap-2 animate-fade-in">
+                  <span className="text-xs font-semibold text-[#8b949e]">Background Removed</span>
+                  <div className="relative border border-[#30363d] rounded-xl overflow-hidden aspect-[4/3] bg-[#0d1117] flex items-center justify-center p-2 select-none">
+                    
+                    {/* Checkerboard background */}
+                    <div
+                      className="absolute inset-0 z-0 opacity-10"
+                      style={{
+                        backgroundImage:
+                          "linear-gradient(45deg, #8b949e 25%, transparent 25%, transparent 75%, #8b949e 75%, #8b949e), linear-gradient(45deg, #8b949e 25%, #0d1117 25%, #0d1117 75%, #8b949e 75%, #8b949e)",
+                        backgroundSize: "16px 16px",
+                        backgroundPosition: "0 0, 8px 8px",
+                      }}
+                    />
 
-          {/* History Files List */}
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden shadow-xl">
-            <div className="bg-[#161b22] px-5 py-4 border-b border-[#30363d] flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white">Recent Processed History</h3>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs md:text-sm">
-                <thead>
-                  <tr className="border-b border-[#30363d] text-[#8b949e] font-semibold text-xs bg-[#0d1117]/30">
-                    <th className="px-4 py-2">Asset Name</th>
-                    <th className="px-4 py-2">Size</th>
-                    <th className="px-4 py-2">Created</th>
-                    <th className="px-4 py-2 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historyFiles.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-xs text-[#8b949e] italic">
-                        No processing history found. Upload an image above to start.
-                      </td>
-                    </tr>
-                  ) : (
-                    historyFiles.map((file) => (
-                      <tr key={file.id} className="border-b border-[#30363d] last:border-0 hover:bg-[#161b22]/50 transition-colors">
-                        <td className="px-4 py-3 font-semibold text-white flex items-center gap-2 max-w-[200px] truncate">
-                          <svg viewBox="0 0 16 16" width="16" height="16" className="fill-[#8b949e]">
-                            <path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l3.414 3.414c.329.328.513.773.513 1.237v8.086A1.75 1.75 0 0 1 13.75 15H3.75A1.75 1.75 0 0 1 2 13.25V1.75zm1.5.25v11.25c0 .138.112.25.25.25h10a.25.25 0 0 0 .25-.25V6H10.75A1.75 1.75 0 0 1 9 4.25V1.5H3.75a.25.25 0 0 0-.25.25zM10.5 1.8L13.7 5H10.5a.25.25 0 0 1-.25-.25V1.8z"></path>
-                          </svg>
-                          <span className="truncate">{file.name}</span>
-                        </td>
-                        <td className="px-4 py-3 text-[#8b949e]">{file.size}</td>
-                        <td className="px-4 py-3 text-[#8b949e]">{file.time}</td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="inline-flex gap-3 text-xs font-semibold">
-                            <a href="#" className="text-[#58a6ff] hover:underline">Download</a>
-                            <button
-                              onClick={() => handleDeleteHistory(file.id)}
-                              className="text-[#f85149] hover:underline cursor-pointer"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+                    {isProcessing && (
+                      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3.5 z-20">
+                        <div className="w-8 h-8 rounded-full border-[3px] border-[#30363d] border-t-[#58a6ff] animate-spin" />
+                        <div className="text-xs font-semibold text-white">{processingStep}</div>
+                        
+                        {/* Progress bar */}
+                        <div className="w-40 h-1.5 bg-[#30363d] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#58a6ff] rounded-full transition-all duration-500"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                        <div className="text-[10px] text-[#8b949e] font-mono">{progress}%</div>
+                      </div>
+                    )}
 
-        {/* Right Column: Credentials & API key integration (25%) */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
-          
-          {/* API Token Box */}
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-5 shadow-xl flex flex-col gap-4">
-            <div>
-              <h3 className="text-sm font-bold text-white mb-1">Your Developer API Key</h3>
-              <p className="text-xs text-[#8b949e]">Use this JWT Bearer credential token to authorize HTTP requests into G-Remover API endpoints.</p>
-            </div>
-
-            <div className="flex flex-col gap-2 font-mono">
-              <div className="relative bg-[#0d1117] border border-[#30363d] rounded-lg p-3 text-xs break-all flex items-center justify-between min-h-[60px]">
-                <span className="text-[#8b949e] truncate max-w-[200px]">
-                  {apiKeyVisible ? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock_token_key_gericmorit_development" : "••••••••••••••••••••••••••••••••••••••••"}
-                </span>
-                <button
-                  onClick={() => setApiKeyVisible(!apiKeyVisible)}
-                  className="text-xs text-[#58a6ff] hover:underline cursor-pointer select-none ml-2 flex-shrink-0"
-                >
-                  {apiKeyVisible ? "Hide" : "Reveal"}
-                </button>
+                    {outputUrl ? (
+                      <img
+                        src={outputUrl}
+                        alt="Processed output"
+                        className="max-w-full max-h-full object-contain rounded relative z-10 drop-shadow-[0_10px_25px_rgba(0,0,0,0.6)]"
+                      />
+                    ) : !isProcessing ? (
+                      <div className="text-xs text-[#484f58] italic relative z-10">Awaiting processing...</div>
+                    ) : null}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock_token_key_gericmorit_development");
-                  alert("API Token copied to clipboard!");
-                }}
-                className="bg-[#21262d] border border-[#30363d] hover:bg-[#30363d] text-white font-semibold text-xs px-3 py-2 rounded-md transition-all flex-1 text-center cursor-pointer"
-              >
-                Copy Key
-              </button>
-              <button
-                onClick={() => alert("Credentials token revoked. Generate a new key by logging in.")}
-                className="bg-transparent border border-[#30363d] hover:border-[#f85149] text-[#f85149] font-semibold text-xs px-3 py-2 rounded-md transition-all text-center cursor-pointer"
-              >
-                Revoke
-              </button>
-            </div>
+            {/* Action Buttons */}
+            {selectedFile && !isProcessing && (
+              <div className="flex items-center justify-between gap-4 border-t border-[#30363d] pt-5">
+                <button
+                  onClick={handleClear}
+                  className="text-xs font-semibold text-[#f85149] hover:underline cursor-pointer"
+                >
+                  Clear Image
+                </button>
+
+                <div className="flex gap-2.5">
+                  <button
+                    onClick={() => selectedFile && runRemoval(selectedFile)}
+                    className="bg-[#21262d] border border-[#30363d] hover:bg-[#30363d] text-white font-semibold text-xs px-4 py-2.5 rounded-lg transition-all cursor-pointer"
+                  >
+                    Re-run Extraction
+                  </button>
+                  {outputUrl && (
+                    <a
+                      href={outputUrl}
+                      download={`g_remover_${selectedFile.name.replace(/\.[^.]+$/, "")}.png`}
+                      className="bg-[#238636] hover:bg-[#2ea043] text-white font-bold text-xs px-4 py-2.5 rounded-lg transition-all flex items-center gap-1.5 shadow-md shadow-[#2ea043]/10"
+                    >
+                      Download PNG
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Quick Integration Details */}
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-5 shadow-xl flex flex-col gap-3">
-            <h3 className="text-sm font-bold text-white">Quick Integration</h3>
-            <p className="text-xs text-[#8b949e] leading-relaxed">
-              Verify your local Axum REST endpoint is running on port `8080` and execute in terminal:
-            </p>
-            <pre className="bg-[#0d1117] border border-[#30363d] p-3 rounded-lg text-[10px] leading-5 font-mono text-[#c9d1d9] overflow-x-auto">
-              <code>{`curl -X POST http://localhost:8080/api/remove \\
-  -H "Authorization: Bearer <key>" \\
-  -F "image=@photo.png"`}</code>
-            </pre>
-            <a href="/#code-samples" className="text-xs text-[#58a6ff] hover:underline font-semibold block mt-1">
-              Browse full integration docs &rarr;
-            </a>
-          </div>
-
         </div>
-      </main>
+
+      </div>
     </div>
   );
 }
