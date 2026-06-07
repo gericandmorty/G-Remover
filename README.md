@@ -1,24 +1,21 @@
 # G-Remover Frontend Portal
 
-A premium, modern web interface for G-Remover—a high-performance, automatic background removal platform. Built with Next.js and styled using Tailwind CSS v4, G-Remover provides a sleek, responsive, and interactive experience for managing and processing photo backgrounds.
-
-> [!WARNING]
-> **Status: Coming Soon / Under Active Development**
-> G-Remover is currently in development. The landing portal, user authentication flow, and interactive dashboard workspace mockup are completed. Integration with production AI background-removal models is coming soon!
+A premium, modern web interface for G-Remover—a high-performance, automatic background removal platform. Built with Next.js and styled using Tailwind CSS v4, G-Remover provides a sleek, responsive, and interactive experience for uploading images and removing their backgrounds in real-time.
 
 ---
 
 ## Tech Stack and Features
 
-- **Frontend**: Next.js 16 (App Router) & Tailwind CSS v4
-- **Backend API**: Powered by a lightning-fast Rust Axum server
-- **Database**: MongoDB for secure user account storage
-- **Authentication**: JWT (JSON Web Token) saved locally, featuring strict real-time password complexity validation checks (length, case, numbers, special characters)
-- **User Dashboard**: Modern glassmorphic user workspace with:
+- **Frontend**: Next.js (App Router) & Tailwind CSS v4
+- **Backend API**: Powered by a lightning-fast Rust Axum server running native ONNX model inference
+- **Database**: MongoDB for user account storage (Optional)
+- **Authentication**: JWT (JSON Web Token) saved locally, featuring strict real-time password complexity validation checks (Optional)
+- **User Dashboard**: Simplified, modern glassmorphic workspace:
   - Interactive file dropzones (drag-and-drop support)
-  - Simulated AI pipeline step-by-step progress tracking
-  - Token-based usage indicators
-  - Mock processing history logs
+  - Real-time AI image background removal processing
+  - Optional login support to allow seamless anonymous image processing
+- **Developer / About Page**: Showcase page featuring the developer **Geric Morit** and detailing the project's tech stack categories.
+- **Interactive Documentation**: Interactive API reference page featuring implementation scripts for `cURL`, `Node.js`, and `Rust`.
 
 ---
 
@@ -53,7 +50,7 @@ Start the Next.js dev server:
 npm run dev
 ```
 
-Open http://localhost:3000 in your browser to see the landing page.
+Open [http://localhost:3000](http://localhost:3000) in your browser to see the landing page.
 
 ---
 
@@ -63,15 +60,17 @@ Open http://localhost:3000 in your browser to see the landing page.
 frontend/
 ├── app/
 │   ├── (pages)/
-│   │   ├── (landing)/   # Beautiful GitHub-themed landing page
-│   │   └── dashboard/   # Secure user dashboard & AI workspace
+│   │   ├── (landing)/   # Beautiful landing page with direct access to try out the tool
+│   │   ├── about/       # Developer spotlight & stack overview
+│   │   ├── dashboard/   # Glassmorphic AI workspace for image uploads & background removal
+│   │   └── docs/        # Interactive API endpoints guide (cURL, Node.js, Rust tabs)
 │   ├── auth/
-│   │   ├── login/       # User sign-in with redirect flows
+│   │   ├── login/       # User sign-in with optional redirect flows
 │   │   └── register/    # Sign-up with real-time password requirement checklists
-│   ├── components/      # Shared components (NavBar, etc.)
+│   ├── components/      # Shared components (Navbar, Footer, etc.)
 │   ├── layout.tsx       # Root layout configuration
 │   └── globals.css      # Core global stylesheet
-├── public/              # Static media and assets
+├── public/              # Static media, profiles, and assets
 ├── package.json         # Scripts and project dependencies
 └── README.md            # Frontend documentation
 ```
