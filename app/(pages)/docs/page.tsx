@@ -133,26 +133,28 @@ std::fs::write("result.png", bytes)?;`,
           </div>
 
           {/* Table Parameters */}
-          <div className="border border-[#30363d] rounded-xl overflow-hidden text-xs">
-            <div className="bg-[#0d1117] px-4 py-2 text-[#8b949e] font-semibold border-b border-[#30363d] grid grid-cols-3">
-              <span>Header / Field</span>
-              <span>Type</span>
-              <span>Description</span>
-            </div>
-            <div className="p-4 grid grid-cols-3 gap-2 border-b border-[#30363d]/60">
-              <span className="font-mono text-white">Authorization</span>
-              <span className="text-[#8b949e]">Header (Optional)</span>
-              <span className="text-[#8b949e] leading-relaxed">JWT Bearer credential token: <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded">Bearer &lt;token&gt;</code></span>
-            </div>
-            <div className="p-4 grid grid-cols-3 gap-2 border-b border-[#30363d]/60">
-              <span className="font-mono text-white">image</span>
-              <span className="text-[#8b949e]">Form data (Required)</span>
-              <span className="text-[#8b949e] leading-relaxed">Raw image file binary. Max size: <strong className="text-white">10MB</strong>. Accepted: PNG, JPEG, WebP.</span>
-            </div>
-            <div className="p-4 grid grid-cols-3 gap-2">
-              <span className="font-mono text-white">Response</span>
-              <span className="text-[#8b949e]">Body</span>
-              <span className="text-[#8b949e] leading-relaxed">Raw PNG bytes with <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded">Content-Type: image/png</code></span>
+          <div className="overflow-x-auto">
+            <div className="border border-[#30363d] rounded-xl overflow-hidden text-xs min-w-[550px]">
+              <div className="bg-[#0d1117] px-4 py-2 text-[#8b949e] font-semibold border-b border-[#30363d] grid grid-cols-3">
+                <span>Header / Field</span>
+                <span>Type</span>
+                <span>Description</span>
+              </div>
+              <div className="p-4 grid grid-cols-3 gap-2 border-b border-[#30363d]/60">
+                <span className="font-mono text-white">Authorization</span>
+                <span className="text-[#8b949e]">Header (Optional)</span>
+                <span className="text-[#8b949e] leading-relaxed">JWT Bearer credential token: <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded">Bearer &lt;token&gt;</code></span>
+              </div>
+              <div className="p-4 grid grid-cols-3 gap-2 border-b border-[#30363d]/60">
+                <span className="font-mono text-white">image</span>
+                <span className="text-[#8b949e]">Form data (Required)</span>
+                <span className="text-[#8b949e] leading-relaxed">Raw image file binary. Max size: <strong className="text-white">10MB</strong>. Accepted: PNG, JPEG, WebP.</span>
+              </div>
+              <div className="p-4 grid grid-cols-3 gap-2">
+                <span className="font-mono text-white">Response</span>
+                <span className="text-[#8b949e]">Body</span>
+                <span className="text-[#8b949e] leading-relaxed">Raw PNG bytes with <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded">Content-Type: image/png</code></span>
+              </div>
             </div>
           </div>
         </section>

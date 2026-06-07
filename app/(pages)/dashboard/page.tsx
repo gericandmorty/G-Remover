@@ -274,18 +274,18 @@ export default function DashboardPage() {
 
             {/* Action Buttons */}
             {selectedFile && !isProcessing && (
-              <div className="flex items-center justify-between gap-4 border-t border-[#30363d] pt-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-t border-[#30363d] pt-5">
                 <button
                   onClick={handleClear}
-                  className="text-xs font-semibold text-[#f85149] hover:underline cursor-pointer"
+                  className="text-xs font-semibold text-[#f85149] hover:underline cursor-pointer text-left w-full sm:w-auto"
                 >
                   Clear Image
                 </button>
 
-                <div className="flex gap-2.5">
+                <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
                   <button
                     onClick={() => selectedFile && runRemoval(selectedFile)}
-                    className="bg-[#21262d] border border-[#30363d] hover:bg-[#30363d] text-white font-semibold text-xs px-4 py-2.5 rounded-lg transition-all cursor-pointer"
+                    className="bg-[#21262d] border border-[#30363d] hover:bg-[#30363d] text-white font-semibold text-xs px-4 py-2.5 rounded-lg transition-all cursor-pointer w-full sm:w-auto"
                   >
                     Re-run Extraction
                   </button>
@@ -293,7 +293,7 @@ export default function DashboardPage() {
                     <a
                       href={outputUrl}
                       download={`g_remover_${selectedFile.name.replace(/\.[^.]+$/, "")}.png`}
-                      className="bg-[#238636] hover:bg-[#2ea043] text-white font-bold text-xs px-4 py-2.5 rounded-lg transition-all flex items-center gap-1.5 shadow-md shadow-[#2ea043]/10"
+                      className="bg-[#238636] hover:bg-[#2ea043] text-white font-bold text-xs px-4 py-2.5 rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-md shadow-[#2ea043]/10 w-full sm:w-auto text-center"
                     >
                       Download PNG
                     </a>
