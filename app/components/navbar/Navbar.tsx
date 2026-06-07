@@ -37,20 +37,15 @@ export default function Navbar() {
 
         {/* Global Navigation Links (Desktop) */}
         <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-[#8b949e]">
-          <Link href="/#playground" className="hover:text-white transition-colors cursor-pointer relative py-1 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-[#58a6ff] after:transition-all after:duration-200">
-            Playground
+          <Link href="/dashboard" className="hover:text-white transition-colors cursor-pointer relative py-1 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-[#58a6ff] after:transition-all after:duration-200">
+            Dashboard
           </Link>
-          <Link href="/#code-samples" className="hover:text-white transition-colors cursor-pointer relative py-1 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-[#58a6ff] after:transition-all after:duration-200">
-            Developer API
+          <Link href="/docs" className="hover:text-white transition-colors cursor-pointer relative py-1 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-[#58a6ff] after:transition-all after:duration-200">
+            Docs
           </Link>
-          <Link href="/#features" className="hover:text-white transition-colors cursor-pointer relative py-1 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-[#58a6ff] after:transition-all after:duration-200">
-            Security
+          <Link href="/about" className="hover:text-white transition-colors cursor-pointer relative py-1 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 hover:after:w-full after:bg-[#58a6ff] after:transition-all after:duration-200">
+            About
           </Link>
-          {isLoggedIn && (
-            <Link href="/dashboard" className="text-[#58a6ff] hover:text-[#58a6ff]/80 transition-colors cursor-pointer relative py-1">
-              Dashboard
-            </Link>
-          )}
         </nav>
       </div>
 
@@ -105,35 +100,26 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div className="absolute top-[57px] left-0 w-full bg-[#0d1117] border-b border-[#30363d] flex flex-col p-5 gap-4 md:hidden animate-slide-in-right z-40 shadow-2xl">
           <Link
-            href="/#playground"
+            href="/dashboard"
             onClick={() => setIsMobileMenuOpen(false)}
             className="text-sm font-semibold text-[#8b949e] hover:text-white py-1.5 border-b border-[#161b22]"
           >
-            Playground
+            Dashboard
           </Link>
           <Link
-            href="/#code-samples"
+            href="/docs"
             onClick={() => setIsMobileMenuOpen(false)}
             className="text-sm font-semibold text-[#8b949e] hover:text-white py-1.5 border-b border-[#161b22]"
           >
-            Developer API
+            Docs
           </Link>
           <Link
-            href="/#features"
+            href="/about"
             onClick={() => setIsMobileMenuOpen(false)}
             className="text-sm font-semibold text-[#8b949e] hover:text-white py-1.5 border-b border-[#161b22]"
           >
-            Security
+            About
           </Link>
-          {isLoggedIn && (
-            <Link
-              href="/dashboard"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="text-sm font-semibold text-[#58a6ff] hover:text-[#58a6ff]/80 py-1.5 border-b border-[#161b22]"
-            >
-              Dashboard
-            </Link>
-          )}
 
           <div className="flex flex-col gap-3.5 pt-2">
             {isLoggedIn ? (
