@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "../../components/toast";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
 
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +24,7 @@ export default function RegisterPage() {
     // Frontend validations
     if (!email || !password || !confirmPassword) {
       setError("Please fill in all fields");
+      toast("Please fill in all fields", "error");
       return;
     }
 
@@ -29,26 +32,31 @@ export default function RegisterPage() {
 
     if (trimmedPassword.length < 8) {
       setError("Password must be at least 8 characters long");
+      toast("Password is too short", "error");
       return;
     }
 
     if (!/[A-Z]/.test(trimmedPassword)) {
       setError("Password must contain at least one uppercase letter (A-Z)");
+      toast("Missing uppercase letter in password", "error");
       return;
     }
 
     if (!/[0-9]/.test(trimmedPassword)) {
       setError("Password must contain at least one number (0-9)");
+      toast("Missing number in password", "error");
       return;
     }
 
     if (!/[^a-zA-Z0-9]/.test(trimmedPassword)) {
       setError("Password must contain at least one special character (e.g. !, @, #, $)");
+      toast("Missing special character in password", "error");
       return;
     }
 
     if (trimmedPassword !== confirmPassword.trim()) {
       setError("Passwords do not match");
+      toast("Passwords do not match", "error");
       return;
     }
 
@@ -75,6 +83,7 @@ export default function RegisterPage() {
       }
 
       setSuccess(true);
+      toast("Account created successfully! Redirecting to sign in...", "success");
       setEmail("");
       setPassword("");
       setConfirmPassword("");
@@ -84,7 +93,9 @@ export default function RegisterPage() {
         router.push("/auth/login");
       }, 2000);
     } catch (err: any) {
-      setError(err.message || "Failed to connect to authentication server.");
+      const errMsg = err.message || "Failed to connect to authentication server.";
+      setError(errMsg);
+      toast(errMsg, "error");
     } finally {
       setIsLoading(false);
     }

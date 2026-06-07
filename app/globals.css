@@ -12,6 +12,21 @@
   --font-mono: var(--font-geist-mono);
 }
 
+@theme {
+  --animate-slide-in-right: slide-in-right 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  @keyframes slide-in-right {
+    0% {
+      transform: translateX(100%) scale(0.9);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0) scale(1);
+      opacity: 1;
+    }
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getCookie } from "../../components/cookies";
 
 interface MockFile {
   id: string;
@@ -30,7 +31,7 @@ export default function DashboardPage() {
 
   // Route guard validation check
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getCookie("token");
     if (!token) {
       // Not logged in -> redirect to login page
       router.push("/auth/login");

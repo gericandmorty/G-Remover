@@ -184,11 +184,6 @@ export default function GRemoverProductLanding() {
       <section className="relative z-10 max-w-7xl mx-auto px-6 pt-16 pb-20 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         {/* Left Headline */}
         <div className="lg:col-span-7 flex flex-col gap-6">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#161b22] border border-[#30363d] rounded-full text-xs text-[#58a6ff] font-semibold w-fit">
-            <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full animate-ping"></span>
-            AI Powered Edge Removal
-          </span>
-          
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-tight">
             Delete backgrounds. <br />
             <span className="bg-gradient-to-r from-[#58a6ff] via-[#bc85ff] to-[#ff7b72] bg-clip-text text-transparent">

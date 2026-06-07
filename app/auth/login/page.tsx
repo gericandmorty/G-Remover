@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { setCookie } from "../../components/cookies";
+import { useToast } from "../../components/toast";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -12,6 +14,7 @@ export default function LoginPage() {
   const [success, setSuccess] = useState(false);
 
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +23,7 @@ export default function LoginPage() {
 
     if (!email || !password) {
       setError("Please fill in all fields");
+      toast("Please fill in all fields", "error");
       return;
     }
 
@@ -45,16 +49,19 @@ export default function LoginPage() {
         throw new Error(data.message || "Invalid email or password");
       }
 
-      // Save token to localStorage
-      localStorage.setItem("token", data.token);
+      // Save token to secure cookies
+      setCookie("token", data.token, 7);
       setSuccess(true);
+      toast("Successfully signed in! Redirecting...", "success");
 
       // Redirect to dashboard page after 1.5 seconds
       setTimeout(() => {
         router.push("/dashboard");
       }, 1500);
     } catch (err: any) {
-      setError(err.message || "Failed to connect to authentication server.");
+      const errMsg = err.message || "Failed to connect to authentication server.";
+      setError(errMsg);
+      toast(errMsg, "error");
     } finally {
       setIsLoading(false);
     }
