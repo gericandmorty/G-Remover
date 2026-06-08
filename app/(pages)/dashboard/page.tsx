@@ -5,9 +5,15 @@ import { getCookie } from "../../components/cookies";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+type HealthStatus = "checking" | "online" | "offline";
+
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string>("");
+
+  // Health polling state
+  const [healthStatus, setHealthStatus] = useState<HealthStatus>("checking");
+  const [lastChecked, setLastChecked] = useState<string>("");
 
   // Upload / processing state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -19,6 +25,26 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   const dragRef = useRef<HTMLDivElement>(null);
+
+  // Poll /api/health every 10 seconds
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/health`, {
+          method: "GET",
+          signal: AbortSignal.timeout(5000),
+        });
+        setHealthStatus(res.ok ? "online" : "offline");
+      } catch {
+        setHealthStatus("offline");
+      }
+      setLastChecked(new Date().toLocaleTimeString());
+    };
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 10_000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Optional token loading on mount
   useEffect(() => {
@@ -164,9 +190,31 @@ export default function DashboardPage() {
               </svg>
               AI Background Removal Workspace
             </h3>
-            <span className="text-[10px] bg-[#3fb950]/10 text-[#3fb950] border border-[#3fb950]/20 px-2.5 py-0.5 rounded-full font-semibold">
-              Live API
-            </span>
+
+            {/* Backend health badge */}
+            <div className="flex items-center gap-2">
+              {healthStatus === "checking" && (
+                <span className="flex items-center gap-1.5 text-[10px] font-semibold text-[#8b949e] bg-[#21262d] border border-[#30363d] px-2.5 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#8b949e] animate-pulse" />
+                  Checking...
+                </span>
+              )}
+              {healthStatus === "online" && (
+                <span className="flex items-center gap-1.5 text-[10px] font-semibold text-[#3fb950] bg-[#3fb950]/10 border border-[#3fb950]/20 px-2.5 py-0.5 rounded-full" title={`Last checked: ${lastChecked}`}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse" />
+                  API Online
+                </span>
+              )}
+              {healthStatus === "offline" && (
+                <span className="flex items-center gap-1.5 text-[10px] font-semibold text-[#f85149] bg-[#f85149]/10 border border-[#f85149]/20 px-2.5 py-0.5 rounded-full" title={`Last checked: ${lastChecked}`}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#f85149]" />
+                  API Offline
+                </span>
+              )}
+              {lastChecked && (
+                <span className="text-[9px] text-[#484f58] hidden sm:block">{lastChecked}</span>
+              )}
+            </div>
           </div>
 
           <div className="p-6 md:p-8 flex flex-col gap-6">
