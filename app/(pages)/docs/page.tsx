@@ -98,11 +98,11 @@ std::fs::write("result.png", bytes)?;`,
       {/* Background Star Overlay */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#0d2b5c]/30 via-transparent to-transparent pointer-events-none z-0"></div>
 
-      <main className="relative z-10 max-w-4xl mx-auto px-6 py-16 flex flex-col gap-12 animate-fade-in">
+      <main className="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col gap-12 animate-fade-in min-w-0">
         
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-extrabold text-white tracking-tight bg-gradient-to-r from-white via-[#e2e8f0] to-[#8b949e] bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight bg-gradient-to-r from-white via-[#e2e8f0] to-[#8b949e] bg-clip-text text-transparent">
             Developer Documentation
           </h1>
           <p className="mt-2 text-sm text-[#8b949e]">
@@ -111,15 +111,15 @@ std::fs::write("result.png", bytes)?;`,
         </div>
 
         {/* API Endpoint Section */}
-        <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 md:p-8 flex flex-col gap-6 shadow-2xl">
+        <section className="bg-[#161b22] border border-[#30363d] rounded-2xl p-4 sm:p-6 md:p-8 flex flex-col gap-6 shadow-2xl min-w-0">
           <div className="flex flex-col gap-2">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#58a6ff]" />
               Remove Background
             </h2>
-            <div className="flex items-center gap-3 mt-1 font-mono text-xs">
-              <span className="bg-[#238636]/10 text-[#2ea043] border border-[#238636]/20 px-2 py-0.5 rounded font-bold">POST</span>
-              <span className="text-white font-semibold">/api/v1/remove-background</span>
+            <div className="flex flex-wrap items-center gap-2 mt-1 font-mono text-xs">
+              <span className="bg-[#238636]/10 text-[#2ea043] border border-[#238636]/20 px-2 py-0.5 rounded font-bold flex-shrink-0">POST</span>
+              <span className="text-white font-semibold break-all">/api/v1/remove-background</span>
             </div>
           </div>
 
@@ -132,29 +132,40 @@ std::fs::write("result.png", bytes)?;`,
             </p>
           </div>
 
-          {/* Table Parameters */}
-          <div className="overflow-x-auto">
-            <div className="border border-[#30363d] rounded-xl overflow-hidden text-xs min-w-[550px]">
-              <div className="bg-[#0d1117] px-4 py-2 text-[#8b949e] font-semibold border-b border-[#30363d] grid grid-cols-3">
-                <span>Header / Field</span>
-                <span>Type</span>
-                <span>Description</span>
-              </div>
-              <div className="p-4 grid grid-cols-3 gap-2 border-b border-[#30363d]/60">
-                <span className="font-mono text-white">Authorization</span>
-                <span className="text-[#8b949e]">Header (Optional)</span>
-                <span className="text-[#8b949e] leading-relaxed">JWT Bearer credential token: <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded">Bearer &lt;token&gt;</code></span>
-              </div>
-              <div className="p-4 grid grid-cols-3 gap-2 border-b border-[#30363d]/60">
-                <span className="font-mono text-white">image</span>
-                <span className="text-[#8b949e]">Form data (Required)</span>
-                <span className="text-[#8b949e] leading-relaxed">Raw image file binary. Max size: <strong className="text-white">10MB</strong>. Accepted: PNG, JPEG, WebP.</span>
-              </div>
-              <div className="p-4 grid grid-cols-3 gap-2">
-                <span className="font-mono text-white">Response</span>
-                <span className="text-[#8b949e]">Body</span>
-                <span className="text-[#8b949e] leading-relaxed">Raw PNG bytes with <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded">Content-Type: image/png</code></span>
-              </div>
+          {/* Parameter cards — stacked on mobile, no grid overflow */}
+          <div className="border border-[#30363d] rounded-xl overflow-hidden text-xs">
+            {/* Header row — hidden on mobile */}
+            <div className="hidden sm:grid bg-[#0d1117] px-4 py-2 text-[#8b949e] font-semibold border-b border-[#30363d] grid-cols-3">
+              <span>Header / Field</span>
+              <span>Type</span>
+              <span>Description</span>
+            </div>
+
+            {/* Authorization row */}
+            <div className="p-4 border-b border-[#30363d]/60 flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2">
+              <span className="font-mono text-white">Authorization</span>
+              <span className="text-[#58a6ff] sm:text-[#8b949e]">Header (Optional)</span>
+              <span className="text-[#8b949e] leading-relaxed break-words">
+                JWT Bearer token:{" "}
+                <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded break-all">Bearer &lt;token&gt;</code>
+              </span>
+            </div>
+
+            {/* Image row */}
+            <div className="p-4 border-b border-[#30363d]/60 flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2">
+              <span className="font-mono text-white">image</span>
+              <span className="text-[#58a6ff] sm:text-[#8b949e]">Form data (Required)</span>
+              <span className="text-[#8b949e] leading-relaxed break-words">Raw image file binary. Max size: <strong className="text-white">10MB</strong>. Accepted: PNG, JPEG, WebP.</span>
+            </div>
+
+            {/* Response row */}
+            <div className="p-4 flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2">
+              <span className="font-mono text-white">Response</span>
+              <span className="text-[#58a6ff] sm:text-[#8b949e]">Body</span>
+              <span className="text-[#8b949e] leading-relaxed break-words">
+                Raw PNG bytes.{" "}
+                <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded break-all">Content-Type: image/png</code>
+              </span>
             </div>
           </div>
         </section>
@@ -204,9 +215,9 @@ std::fs::write("result.png", bytes)?;`,
                 key={idx}
                 className="bg-[#161b22] border border-[#30363d] rounded-xl p-5 flex flex-col gap-2 hover:border-[#8b949e] transition-all group"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between gap-2">
                   <h3 className="font-bold text-white text-sm group-hover:text-[#58a6ff] transition-colors">{tool.name}</h3>
-                  <span className="text-[10px] font-semibold text-[#8b949e] bg-[#21262d] border border-[#30363d] px-2 py-0.5 rounded-full">{tool.role}</span>
+                  <span className="text-[10px] font-semibold text-[#8b949e] bg-[#21262d] border border-[#30363d] px-2 py-0.5 rounded-full whitespace-nowrap">{tool.role}</span>
                 </div>
                 <p className="text-xs text-[#8b949e] leading-relaxed">{tool.desc}</p>
               </div>
@@ -224,7 +235,7 @@ std::fs::write("result.png", bytes)?;`,
                 <div className="w-8 h-8 rounded-lg bg-[#58a6ff]/10 flex items-center justify-center flex-shrink-0 text-[#58a6ff] font-bold text-xs">1</div>
                 <div>
                   <h4 className="font-bold text-white mb-1">Preprocessing</h4>
-                  <p className="text-xs leading-relaxed">The uploaded image is decoded, resized to 320×320 pixels using bilinear interpolation, and normalized using ImageNet mean <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded">[0.485, 0.456, 0.406]</code> and std <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded">[0.229, 0.224, 0.225]</code>. The result is a 1×3×320×320 float tensor.</p>
+                  <p className="text-xs leading-relaxed break-words">The uploaded image is decoded, resized to 320×320 pixels using bilinear interpolation, and normalized using ImageNet mean <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded break-all">[0.485, 0.456, 0.406]</code> and std <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded break-all">[0.229, 0.224, 0.225]</code>. The result is a 1×3×320×320 float tensor.</p>
                 </div>
               </div>
 

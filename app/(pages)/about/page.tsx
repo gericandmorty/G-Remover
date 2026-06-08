@@ -7,72 +7,86 @@ export default function AboutPage() {
     {
       category: "Frontend Stack",
       items: [
-        { name: "Next.js 16", desc: "React framework with server-side rendering and optimized static generation for production-grade speed." },
-        { name: "TypeScript", desc: "Strong static typing across the entire frontend for UI consistency and developer reliability." },
-        { name: "TailwindCSS v4", desc: "Utility-first CSS framework powering the premium dark-mode glassmorphic design system." },
+        { name: "Next.js 16", desc: "React framework powering the dashboard with App Router, server-side rendering, and optimized static generation." },
+        { name: "TypeScript", desc: "Strong static typing across every component for reliability and IDE-level safety." },
+        { name: "TailwindCSS v4", desc: "Utility-first CSS framework behind the dark-mode glassmorphic design system." },
       ],
     },
     {
       category: "Backend Engine",
       items: [
-        { name: "Rust", desc: "Systems language providing memory safety, zero-cost abstractions, and extreme runtime performance." },
-        { name: "Axum (v0.7)", desc: "Async-first web framework built on top of Tokio and Tower, developed by the Tokio team." },
-        { name: "Tokio Runtime", desc: "Multi-threaded async task scheduler enabling non-blocking I/O and high-concurrency request handling." },
-        { name: "MongoDB", desc: "NoSQL document database used for secure user credential storage and session management." },
+        { name: "Rust (Edition 2024)", desc: "Core language providing memory safety without GC, zero-cost abstractions, and native machine-code performance." },
+        { name: "Axum v0.7", desc: "Type-safe async web framework built on Tokio and Tower. Powers all REST endpoints with multipart upload support." },
+        { name: "Tokio", desc: "Multi-threaded async runtime with work-stealing scheduler. Handles all non-blocking I/O, timers, and signal handling." },
+        { name: "MongoDB (v3.1)", desc: "Document store for user credentials and session data via the official async Rust driver with connection pooling." },
       ],
     },
     {
       category: "AI & Image Processing",
       items: [
-        { name: "ONNX Runtime (ort v2)", desc: "Cross-platform high-performance inference engine for executing deep learning models natively in Rust." },
-        { name: "U2-Net (u2netp)", desc: "Lightweight salient object detection model optimized for portrait and product background removal." },
-        { name: "ndarray", desc: "N-dimensional array library for Rust used for tensor manipulation during image preprocessing." },
-        { name: "image crate", desc: "Pure Rust image decoding/encoding library handling PNG, JPEG, and WebP format conversions." },
+        { name: "ONNX Runtime (ort v2)", desc: "Microsoft's cross-platform inference engine running the U2-Net model natively in Rust with Level 3 graph optimizations." },
+        { name: "U2-Net (u2netp)", desc: "Lightweight salient object detection model. Input is normalized to 320×320, output is a per-pixel foreground probability map." },
+        { name: "ndarray v0.17", desc: "N-dimensional array library for tensor construction. Handles the 1×3×320×320 float tensor fed into ONNX Runtime." },
+        { name: "image crate v0.25", desc: "Handles decoding PNG, JPEG, and WebP uploads, bilinear resize, RGBA compositing, and final PNG encoding." },
       ],
     },
     {
-      category: "Security & Auth",
+      category: "Security & Middleware",
       items: [
-        { name: "Bcrypt", desc: "Adaptive hash function with salt rounds for secure server-side password storage." },
-        { name: "JSON Web Tokens", desc: "Stateless authentication tokens signed with HMAC-SHA256 for secure API credential exchange." },
-        { name: "CORS Middleware", desc: "Tower-HTTP layer controlling cross-origin resource sharing between the frontend and backend." },
+        { name: "Bcrypt", desc: "Adaptive password hashing with configurable salt rounds. Used in the register endpoint before storing credentials." },
+        { name: "JWT (HMAC-SHA256)", desc: "Stateless auth tokens with 24-hour expiry. The remove-background endpoint optionally validates Bearer tokens." },
+        { name: "IP Rate Limiter", desc: "Custom Tower middleware using a token bucket algorithm (10 req/min, burst 20). Applied only to the unauthenticated remove endpoint." },
+        { name: "CORS (tower-http)", desc: "Configurable cross-origin policy allowing all origins, GET/POST/PUT/DELETE methods, and Content-Type/Authorization headers." },
       ],
     },
   ];
 
+  const endpoints = [
+    { method: "GET",  path: "/api/health",               desc: "Liveness probe — returns status, timestamp, and service name." },
+    { method: "GET",  path: "/api/info",                  desc: "Returns app version, framework, runtime, and all registered routes." },
+    { method: "POST", path: "/api/auth/register",         desc: "Creates a new user. Validates email, enforces password rules (8+ chars, uppercase, number, special char), hashes with bcrypt." },
+    { method: "POST", path: "/api/auth/login",            desc: "Verifies credentials, checks bcrypt hash, and returns a signed JWT valid for 24 hours." },
+    { method: "POST", path: "/api/v1/remove-background",  desc: "Accepts PNG/JPEG/WebP up to 10MB. Runs U2-Net inference via ONNX Runtime. Returns transparent PNG. Auth is optional. Rate-limited to 10 req/min." },
+  ];
+
+  const methodColor: Record<string, string> = {
+    GET:  "text-[#58a6ff] bg-[#58a6ff]/10 border-[#58a6ff]/20",
+    POST: "text-[#2ea043] bg-[#238636]/10 border-[#238636]/20",
+  };
+
   return (
     <div className="flex-1 bg-[#040d21] text-[#c9d1d9] font-sans antialiased flex flex-col relative overflow-hidden">
-      {/* Background Star Overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#0d2b5c]/30 via-transparent to-transparent pointer-events-none z-0"></div>
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#0d2b5c]/30 via-transparent to-transparent pointer-events-none z-0" />
 
-      <main className="relative z-10 max-w-4xl mx-auto px-6 py-16 flex flex-col gap-14 animate-fade-in">
-        
+      <main className="relative z-10 max-w-4xl mx-auto w-full px-4 sm:px-6 py-10 sm:py-16 flex flex-col gap-12 animate-fade-in">
+
         {/* Title */}
         <div className="text-center">
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight bg-gradient-to-r from-white via-[#e2e8f0] to-[#8b949e] bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight bg-gradient-to-r from-white via-[#e2e8f0] to-[#8b949e] bg-clip-text text-transparent">
             About G-Remover
           </h1>
-          <p className="mt-3 text-base text-[#8b949e] max-w-2xl mx-auto leading-relaxed">
-            A high-speed, local-first background extraction service engineered with a Rust API backend and modern Next.js dashboard.
+          <p className="mt-3 text-sm text-[#8b949e] max-w-2xl mx-auto leading-relaxed">
+            A high-speed, local-first background extraction service built with a Rust API backend and a Next.js dashboard.
           </p>
         </div>
 
         {/* Developer Info Card */}
-        <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 md:p-8 shadow-2xl flex flex-col md:flex-row gap-6 items-center">
+        <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-5 sm:p-8 shadow-2xl flex flex-col sm:flex-row gap-6 items-center">
           <img
             src="/profile/rick-sanchez-1.jpg"
             alt="Geric Morit"
-            className="w-24 h-24 rounded-full object-cover border-2 border-[#30363d] shadow-xl shadow-[#58a6ff]/10"
+            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-[#30363d] shadow-xl shadow-[#58a6ff]/10 flex-shrink-0"
           />
-          <div className="flex-1 text-center md:text-left flex flex-col gap-3">
+          <div className="flex-1 text-center sm:text-left flex flex-col gap-3">
             <div>
-              <h3 className="text-xl font-bold text-white">Geric Morit</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-white">Geric Morit</h3>
               <p className="text-xs text-[#8b949e] uppercase tracking-wider font-semibold mt-0.5">Lead Developer & Systems Architect</p>
             </div>
             <p className="text-sm text-[#8b949e] leading-relaxed">
-              G-Remover was created to showcase high-performance Rust web service architectures. By hosting neural network inference directly in native Rust threads rather than heavy Python processes, the pipeline achieves sub-200ms background extraction with extreme system efficiency.
+              G-Remover showcases high-performance Rust web service architecture. Neural network inference runs directly in native Rust threads via ONNX Runtime — no Python, no overhead — achieving sub-200ms background extraction with extreme system efficiency.
             </p>
-            <div className="flex items-center gap-4 mt-1 justify-center md:justify-start">
+            <div className="flex items-center gap-4 mt-1 justify-center sm:justify-start">
               <a
                 href="https://github.com/gericandmorty"
                 target="_blank"
@@ -99,17 +113,34 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Tech Stack Sections */}
-        <div className="flex flex-col gap-8">
-          <h2 className="text-xl font-bold text-white border-b border-[#30363d] pb-2">The Tech Stack</h2>
-          
+        {/* API Endpoints */}
+        <section className="flex flex-col gap-4">
+          <h2 className="text-base sm:text-lg font-bold text-white border-b border-[#30363d] pb-2">API Endpoints</h2>
+          <div className="flex flex-col gap-2">
+            {endpoints.map((ep, i) => (
+              <div key={i} className="bg-[#161b22] border border-[#30363d] rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 hover:border-[#8b949e] transition-all">
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className={`text-[10px] font-bold border px-2 py-0.5 rounded font-mono w-12 text-center ${methodColor[ep.method]}`}>
+                    {ep.method}
+                  </span>
+                  <code className="text-xs text-white font-mono">{ep.path}</code>
+                </div>
+                <p className="text-xs text-[#8b949e] leading-relaxed sm:border-l sm:border-[#30363d] sm:pl-4">{ep.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Tech Stack */}
+        <section className="flex flex-col gap-6">
+          <h2 className="text-base sm:text-lg font-bold text-white border-b border-[#30363d] pb-2">The Tech Stack</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {tools.map((section, idx) => (
-              <div key={idx} className="flex flex-col gap-4">
+              <div key={idx} className="flex flex-col gap-3">
                 <h3 className="text-xs font-bold text-[#58a6ff] uppercase tracking-widest">{section.category}</h3>
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
                   {section.items.map((tool, tIdx) => (
-                    <div key={tIdx} className="bg-[#161b22]/50 border border-[#30363d]/60 rounded-xl p-4 flex flex-col gap-1 hover:border-[#8b949e] transition-all">
+                    <div key={tIdx} className="bg-[#161b22]/50 border border-[#30363d]/60 rounded-xl p-3 sm:p-4 flex flex-col gap-1 hover:border-[#8b949e] transition-all">
                       <span className="font-bold text-white text-sm">{tool.name}</span>
                       <span className="text-xs text-[#8b949e] leading-relaxed">{tool.desc}</span>
                     </div>
@@ -118,10 +149,10 @@ export default function AboutPage() {
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Call to action */}
-        <div className="text-center mt-2">
+        {/* CTA */}
+        <div className="text-center mt-2 pb-4">
           <Link
             href="/dashboard"
             className="inline-block bg-gradient-to-r from-[#238636] to-[#2ea043] hover:from-[#2ea043] hover:to-[#3fb950] text-white font-bold text-sm px-8 py-3.5 rounded-xl shadow-lg shadow-[#238636]/10 transition-all transform hover:-translate-y-0.5"

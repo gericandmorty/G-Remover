@@ -12,12 +12,6 @@ export default function GRemoverProductLanding() {
       <section className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 py-20 max-w-4xl mx-auto">
         <div className="flex flex-col items-center gap-8 animate-fade-in">
           
-          {/* Logo / Badge */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#161b22]/80 border border-[#30363d] shadow-lg backdrop-blur-sm">
-            <img src="/icons/icon.png" alt="G-Remover Logo" className="w-5 h-5 object-contain" />
-            <span className="text-xs font-semibold text-white tracking-wide">G-Remover v1.0.0</span>
-          </div>
-
           {/* Heading */}
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-tight">
             Delete backgrounds.<br />
