@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [lastChecked, setLastChecked] = useState<string>("");
   const [isWakingUp, setIsWakingUp] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [wakeElapsed, setWakeElapsed] = useState(0);
 
   // Upload / processing state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -33,7 +34,7 @@ export default function DashboardPage() {
       try {
         const res = await fetch(`${API_BASE}/api/health`, {
           method: "GET",
-          signal: AbortSignal.timeout(15000),
+          signal: AbortSignal.timeout(120_000),
         });
         setHealthStatus(res.ok ? "online" : "offline");
       } catch {
@@ -56,26 +57,33 @@ export default function DashboardPage() {
     if (isWakingUp || cooldown > 0) return;
     setIsWakingUp(true);
     setHealthStatus("checking");
+    setWakeElapsed(0);
+
+    // Tick elapsed seconds while waiting
+    const elapsedTimer = setInterval(() => {
+      setWakeElapsed((s) => s + 1);
+    }, 1000);
+
     try {
       const res = await fetch(`${API_BASE}/api/health`, {
         method: "GET",
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(120_000), // 2 min — covers Render cold starts
       });
       setHealthStatus(res.ok ? "online" : "offline");
     } catch {
       setHealthStatus("offline");
     }
+
+    clearInterval(elapsedTimer);
+    setWakeElapsed(0);
     setLastChecked(new Date().toLocaleTimeString());
     setIsWakingUp(false);
 
     // Start 10-second cooldown
     setCooldown(10);
-    const timer = setInterval(() => {
+    const cooldownTimer = setInterval(() => {
       setCooldown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
+        if (prev <= 1) { clearInterval(cooldownTimer); return 0; }
         return prev - 1;
       });
     }, 1000);
@@ -258,7 +266,7 @@ export default function DashboardPage() {
                     <div className="flex flex-col gap-0.5">
                       <span className="text-xs font-bold text-[#d29922]">Backend is sleeping</span>
                       <span className="text-xs text-[#8b949e] leading-relaxed">
-                        Due to the free backend service, the server needs to wake up before you can remove backgrounds. Click the button to wake it up — this usually takes 10–30 seconds.
+                        Due to the free backend service, the server needs to wake up before you can remove backgrounds. Click the button to wake it up — cold starts can take up to <strong className="text-[#d29922]">2 minutes</strong>, please be patient.
                       </span>
                     </div>
                   </div>
@@ -270,7 +278,7 @@ export default function DashboardPage() {
                     {isWakingUp ? (
                       <>
                         <span className="w-3 h-3 rounded-full border-2 border-[#d29922]/40 border-t-[#d29922] animate-spin" />
-                        Waking up...
+                        Waking up... {wakeElapsed}s
                       </>
                     ) : cooldown > 0 ? (
                       <>
