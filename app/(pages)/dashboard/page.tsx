@@ -33,7 +33,7 @@ export default function DashboardPage() {
       try {
         const res = await fetch(`${API_BASE}/api/health`, {
           method: "GET",
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal.timeout(15000),
         });
         setHealthStatus(res.ok ? "online" : "offline");
       } catch {
@@ -301,8 +301,8 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {!selectedFile ? (
-                /* Drop Zone */
+              {/* Drop Zone — only when API is online and no file selected */}
+              {healthStatus === "online" && !selectedFile && (
                 <div
                   ref={dragRef}
                   onDragOver={handleDragOver}
@@ -311,14 +311,12 @@ export default function DashboardPage() {
                   onClick={() => document.getElementById("file-upload")?.click()}
                   className="border-2 border-dashed border-[#30363d] hover:border-[#58a6ff]/60 rounded-2xl py-14 sm:py-20 px-6 text-center flex flex-col items-center justify-center gap-5 cursor-pointer transition-all duration-300 bg-[#0d1117]/40 hover:bg-[#58a6ff]/5 group relative overflow-hidden"
                 >
-                  {/* Subtle grid pattern */}
                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
                     style={{
                       backgroundImage: "linear-gradient(#8b949e 1px, transparent 1px), linear-gradient(90deg, #8b949e 1px, transparent 1px)",
                       backgroundSize: "32px 32px",
                     }}
                   />
-
                   <input
                     id="file-upload"
                     type="file"
@@ -326,7 +324,6 @@ export default function DashboardPage() {
                     onChange={handleInputChange}
                     className="hidden"
                   />
-
                   <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-[#21262d] to-[#161b22] border border-[#30363d] flex items-center justify-center text-[#8b949e] group-hover:text-[#58a6ff] group-hover:border-[#58a6ff]/40 group-hover:scale-105 transition-all duration-300 shadow-lg">
                     <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -334,20 +331,20 @@ export default function DashboardPage() {
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
                   </div>
-
                   <div className="flex flex-col gap-1.5 relative">
                     <span className="text-sm font-bold text-white group-hover:text-[#58a6ff] transition-colors">
                       Drop image here, or click to browse
                     </span>
                     <span className="text-xs text-[#8b949e]">PNG, JPG, or WEBP — max 10 MB</span>
                   </div>
-
                   <button className="relative bg-[#21262d] border border-[#30363d] hover:bg-[#30363d] hover:border-[#58a6ff]/30 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all">
                     Browse Files
                   </button>
                 </div>
-              ) : (
-                /* Before / After Preview */
+              )}
+
+              {/* Before / After Preview — only when a file is selected */}
+              {healthStatus === "online" && selectedFile && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   {/* Original */}
                   <div className="flex flex-col gap-2">
