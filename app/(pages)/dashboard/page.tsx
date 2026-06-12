@@ -22,7 +22,7 @@ export default function DashboardPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState("");
-  const [processingPhase, setProcessingPhase] = useState<"" | "1" | "2">("");
+  const [processingPhase, setProcessingPhase] = useState<"" | "preprocess" | "inference" | "postprocess">("");
   const [progress, setProgress] = useState(0);
   const [outputUrl, setOutputUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -92,17 +92,14 @@ export default function DashboardPage() {
 
   const startProgressTicker = () => {
     setProgress(0);
-    // Steps mirror the actual backend two-phase pipeline:
-    // Phase 1 → u2netp fast rough cut (320×320)
-    // Phase 2 → RMBG-1.4 refined cleanup (1024×1024)
-    const steps: { p: number; s: string; phase: "" | "1" | "2" }[] = [
+    // Steps mirror the actual backend single-phase RMBG-1.4 pipeline:
+    const steps: { p: number; s: string; phase: "" | "preprocess" | "inference" | "postprocess" }[] = [
       { p: 10, s: "Uploading source image...",                       phase: "" },
-      { p: 22, s: "Decompressing and validating pixels...",           phase: "" },
-      { p: 38, s: "Executing Phase 1: Rough segmentation (u2netp)...",    phase: "1" },
-      { p: 55, s: "Extracting low-resolution foreground mask...",  phase: "1" },
-      { p: 68, s: "Preparing intermediate alpha matte...",    phase: "2" },
-      { p: 82, s: "Executing Phase 2: High-resolution refinement (RMBG-1.4)...", phase: "2" },
-      { p: 93, s: "Compositing final transparency channel...",  phase: "2" },
+      { p: 25, s: "Decompressing and validating pixels...",           phase: "preprocess" },
+      { p: 45, s: "Resizing to 1024×1024 & normalizing...",          phase: "preprocess" },
+      { p: 70, s: "Executing neural background removal (RMBG-1.4)...", phase: "inference" },
+      { p: 88, s: "Min-Max normalizing output logit mask...",        phase: "postprocess" },
+      { p: 95, s: "Compositing transparency to original image...",    phase: "postprocess" },
     ];
     steps.forEach((step, i) => {
       setTimeout(() => {
@@ -402,7 +399,11 @@ export default function DashboardPage() {
                               <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" />
                               <path
                                 className={`transition-colors duration-500 ${
-                                  processingPhase === "2" ? "text-[#bc85ff]" : "text-[#58a6ff]"
+                                  processingPhase === "inference"
+                                    ? "text-[#9b51e0]"
+                                    : processingPhase === "postprocess"
+                                    ? "text-[#3fb950]"
+                                    : "text-[#58a6ff]"
                                 }`}
                                 fill="currentColor"
                                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
@@ -414,17 +415,21 @@ export default function DashboardPage() {
                           <div className="flex flex-col items-center gap-2">
                             <span
                               className={`text-[9px] font-bold tracking-widest uppercase px-2.5 py-0.5 rounded-md border transition-all duration-500 ${
-                                processingPhase === "2"
-                                  ? "text-[#bc85ff] bg-[#bc85ff]/5 border-[#bc85ff]/20"
-                                  : processingPhase === "1"
+                                processingPhase === "preprocess"
                                   ? "text-[#58a6ff] bg-[#58a6ff]/5 border-[#58a6ff]/20"
+                                  : processingPhase === "inference"
+                                  ? "text-[#9b51e0] bg-[#9b51e0]/5 border-[#9b51e0]/20"
+                                  : processingPhase === "postprocess"
+                                  ? "text-[#3fb950] bg-[#3fb950]/5 border-[#3fb950]/20"
                                   : "text-[#8b949e] bg-[#21262d]/40 border-[#30363d]"
                               }`}
                             >
-                              {processingPhase === "2"
-                                ? "Phase 2 · Edge Refinement"
-                                : processingPhase === "1"
-                                ? "Phase 1 · Rough Segmentation"
+                              {processingPhase === "preprocess"
+                                ? "Step 1 · Preprocessing"
+                                : processingPhase === "inference"
+                                ? "Step 2 · Neural Inference"
+                                : processingPhase === "postprocess"
+                                ? "Step 3 · Compositing"
                                 : "Initializing Pipeline"}
                             </span>
                             
@@ -444,7 +449,13 @@ export default function DashboardPage() {
                             </div>
                             <div className="flex justify-between text-[9px] text-[#8b949e] font-mono tracking-wider">
                               <span className="uppercase">
-                                {processingPhase ? `Phase ${processingPhase}` : "Preparing"}
+                                {processingPhase === "preprocess"
+                                  ? "Preprocessing"
+                                  : processingPhase === "inference"
+                                  ? "Inference"
+                                  : processingPhase === "postprocess"
+                                  ? "Compositing"
+                                  : "Preparing"}
                               </span>
                               <span>{progress}%</span>
                             </div>

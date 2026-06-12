@@ -7,14 +7,13 @@ A premium, modern web interface for G-Remover—a high-performance, automatic ba
 ## Tech Stack and Features
 
 - **Frontend**: Next.js (App Router) & Tailwind CSS v4
-- **Backend API**: Powered by a high-performance Rust Axum server running a hybrid **Two-Phase Background Removal Pipeline**:
-  - **Phase 1 (Coarse Cut)**: Uses a lightweight `u2netp` model (320×320) to generate a quick, rough foreground mask and isolate the content from the background.
-  - **Phase 2 (Refinement)**: Passes the pre-cleaned intermediate image to `BRIA RMBG-1.4` (1024×1024) to execute precise alpha matting, detail polishing, and edge smoothing.
+- **Backend API**: Powered by a high-performance Rust Axum server running a single-model pipeline using:
+  - **BRIA RMBG-1.4**: An 8-bit quantized segmentation model (~42 MB) executing at 1024×1024 resolution. Disabling the memory arena ensures memory is returned to the OS immediately, running securely inside Render's 512 MB free tier.
 - **Database**: MongoDB for user account storage (Optional)
 - **Authentication**: JWT (JSON Web Token) saved locally, featuring strict real-time password complexity validation checks (Optional)
 - **User Dashboard**: Simplified, modern glassmorphic workspace:
   - Interactive file dropzones (drag-and-drop support)
-  - Real-time visual progress overlay representing both Phase 1 (Rough Cut) and Phase 2 (Refinement) pipeline states
+  - Real-time visual progress overlay representing the 3-step pipeline: Preprocessing, Neural Inference, and Compositing
   - Optional login support to allow seamless anonymous image processing
 - **Developer / About Page**: Showcase page featuring the developer **Geric Morit** and detailing the project's tech stack categories.
 - **Interactive Documentation**: Interactive API reference page detailing pipeline mechanics and providing implementation scripts for `cURL`, `Node.js`, and `Rust`.
