@@ -69,7 +69,7 @@ std::fs::write("result.png", bytes)?;`,
     {
       name: "BRIA RMBG-1.4",
       role: "Phase 2 - Edge Refinement",
-      desc: "A highly accurate ISNet-based segmentation model (~170 MB) operating at 1024×1024 resolution. It is executed on the pre-cleaned intermediate image output by Phase 1, focusing its full network capacity on detail-preserving alpha matting and edge refinement.",
+      desc: "A highly accurate ISNet-based segmentation model (8-bit quantized, ~43 MB) operating at 1024×1024 resolution. It is executed on the pre-cleaned intermediate image output by Phase 1, focusing its full network capacity on detail-preserving alpha matting and edge refinement.",
     },
     {
       name: "MongoDB",
