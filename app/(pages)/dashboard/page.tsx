@@ -26,8 +26,16 @@ export default function DashboardPage() {
   const [progress, setProgress] = useState(0);
   const [outputUrl, setOutputUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [bgColor, setBgColor] = useState<"transparent" | "white" | "green">("transparent");
 
   const dragRef = useRef<HTMLDivElement>(null);
+
+  // Re-run extraction automatically when background color changes
+  useEffect(() => {
+    if (selectedFile && !isProcessing) {
+      runRemoval(selectedFile);
+    }
+  }, [bgColor]);
 
   // Check health once on mount only — the wake-up button handles subsequent checks
   useEffect(() => {
@@ -120,6 +128,7 @@ export default function DashboardPage() {
     try {
       const formData = new FormData();
       formData.append("image", file);
+      formData.append("background_color", bgColor);
 
       const headers: Record<string, string> = {};
       if (token && token !== "undefined" && token !== "null") {
@@ -473,6 +482,68 @@ export default function DashboardPage() {
                         <div className="text-xs text-[#484f58] italic relative z-10">Awaiting processing...</div>
                       ) : null}
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Background Color Selector */}
+              {healthStatus === "online" && selectedFile && !isProcessing && (
+                <div className="flex flex-col gap-2.5 bg-[#161b22]/40 border border-[#30363d]/60 rounded-xl p-3 sm:p-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <svg viewBox="0 0 16 16" width="12" height="12" className="fill-[#58a6ff]">
+                        <path d="M12.5 16a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7zm0-1.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM7 1a6.97 6.97 0 0 0-5 2.11L1.13 4H3.5a.75.75 0 0 1 0 1.5H0V1a.75.75 0 0 1 1.5 0v1.38A8.455 8.455 0 0 1 8 0a8.5 8.5 0 0 1 8 8.5.75.75 0 0 1-1.5 0A7 7 0 0 0 7 1zm2.5 1.5A.75.75 0 0 1 10.25.75l.135-.002.135.006A2.25 2.25 0 0 1 12.5 3c0 .125-.01.248-.03.368a.75.75 0 0 1-1.464-.326c.063-.284-.047-.59-.283-.758A.75.75 0 0 1 9.5 2.5z" />
+                      </svg>
+                      Background Styling
+                    </span>
+                    <span className="text-[10px] text-[#8b949e]">
+                      Choose the background layer to composite the foreground object onto.
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <button
+                      onClick={() => setBgColor("transparent")}
+                      disabled={isProcessing}
+                      className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                        bgColor === "transparent"
+                          ? "bg-[#58a6ff]/10 border-[#58a6ff] text-[#58a6ff] shadow-md shadow-[#58a6ff]/5"
+                          : "bg-[#21262d] border-[#30363d] hover:bg-[#30363d] hover:border-[#8b949e]/30 text-[#8b949e] hover:text-white"
+                      }`}
+                    >
+                      <span className="w-2.5 h-2.5 rounded border border-[#30363d] bg-[#0d1117]/60"
+                        style={{
+                          backgroundImage:
+                            "linear-gradient(45deg, #8b949e 25%, transparent 25%, transparent 75%, #8b949e 75%, #8b949e), linear-gradient(45deg, #8b949e 25%, #0d1117 25%, #0d1117 75%, #8b949e 75%, #8b949e)",
+                          backgroundSize: "6px 6px",
+                          backgroundPosition: "0 0, 3px 3px",
+                        }}
+                      />
+                      Transparent
+                    </button>
+                    <button
+                      onClick={() => setBgColor("white")}
+                      disabled={isProcessing}
+                      className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                        bgColor === "white"
+                          ? "bg-[#58a6ff]/10 border-[#58a6ff] text-[#58a6ff] shadow-md shadow-[#58a6ff]/5"
+                          : "bg-[#21262d] border-[#30363d] hover:bg-[#30363d] hover:border-[#8b949e]/30 text-[#8b949e] hover:text-white"
+                      }`}
+                    >
+                      <span className="w-2.5 h-2.5 rounded border border-[#30363d] bg-white" />
+                      Solid White
+                    </button>
+                    <button
+                      onClick={() => setBgColor("green")}
+                      disabled={isProcessing}
+                      className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                        bgColor === "green"
+                          ? "bg-[#58a6ff]/10 border-[#58a6ff] text-[#58a6ff] shadow-md shadow-[#58a6ff]/5"
+                          : "bg-[#21262d] border-[#30363d] hover:bg-[#30363d] hover:border-[#8b949e]/30 text-[#8b949e] hover:text-white"
+                      }`}
+                    >
+                      <span className="w-2.5 h-2.5 rounded border border-[#30363d] bg-[#3fb950]" />
+                      Solid Green
+                    </button>
                   </div>
                 </div>
               )}
