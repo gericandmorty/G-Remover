@@ -62,9 +62,14 @@ std::fs::write("result.png", bytes)?;`,
       desc: "ONNX Runtime is a cross-platform, high-performance inference engine developed by Microsoft. The Rust ort crate provides native bindings to execute ONNX-format deep learning models without Python dependencies.",
     },
     {
-      name: "U2-Net (u2netp)",
-      role: "Background Removal Model",
-      desc: "U2-Net is a two-level nested U-structure architecture designed for salient object detection. The lightweight variant (u2netp) provides highly accurate foreground/background segmentation with a compact model size, ideal for real-time inference.",
+      name: "u2netp",
+      role: "Phase 1 - Coarse Segmentation",
+      desc: "A lightweight, speed-optimized U²-Net architecture model (~4.7 MB) running at 320×320 resolution. It quickly isolates the rough boundaries of the main subject to generate an initial background mask.",
+    },
+    {
+      name: "BRIA RMBG-1.4",
+      role: "Phase 2 - Edge Refinement",
+      desc: "A highly accurate ISNet-based segmentation model (~170 MB) operating at 1024×1024 resolution. It is executed on the pre-cleaned intermediate image output by Phase 1, focusing its full network capacity on detail-preserving alpha matting and edge refinement.",
     },
     {
       name: "MongoDB",
@@ -125,7 +130,7 @@ std::fs::write("result.png", bytes)?;`,
 
           <div className="text-sm text-[#8b949e] leading-relaxed flex flex-col gap-3">
             <p>
-              This endpoint accepts any standard image file (PNG, JPEG, WebP up to 10MB), preprocesses it to 320×320 pixels with ImageNet normalization, runs neural inference via the <strong className="text-white">u2netp</strong> model on ONNX Runtime, and returns the transparent foreground cutout as a PNG.
+              This endpoint accepts any standard image file (PNG, JPEG, WebP up to 10MB) and processes it through a custom <strong className="text-white">Two-Phase Background Removal Pipeline</strong>. It first isolates the subject roughly at 320×320 pixels using `u2netp`, cleanses the background to neutral white, and then executes precise edge refinement at 1024×1024 resolution using the `BRIA RMBG-1.4` model on ONNX Runtime. The result is returned as a transparent PNG.
             </p>
             <p>
               Authentication is <strong className="text-white">optional</strong> — you can send requests without any credentials, or include a JWT Bearer token to link usage to your account.
@@ -234,24 +239,32 @@ std::fs::write("result.png", bytes)?;`,
               <div className="flex gap-4 items-start">
                 <div className="w-8 h-8 rounded-lg bg-[#58a6ff]/10 flex items-center justify-center flex-shrink-0 text-[#58a6ff] font-bold text-xs">1</div>
                 <div>
-                  <h4 className="font-bold text-white mb-1">Preprocessing</h4>
-                  <p className="text-xs leading-relaxed break-words">The uploaded image is decoded, resized to 320×320 pixels using bilinear interpolation, and normalized using ImageNet mean <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded break-all">[0.485, 0.456, 0.406]</code> and std <code className="text-[#e2e8f0] font-mono bg-[#0d1117] px-1 py-0.5 rounded break-all">[0.229, 0.224, 0.225]</code>. The result is a 1×3×320×320 float tensor.</p>
+                  <h4 className="font-bold text-white mb-1">Phase 1: Coarse Segmentation (u2netp)</h4>
+                  <p className="text-xs leading-relaxed break-words">The input image is downscaled to 320×320, normalized using ImageNet configurations, and processed by the lightweight `u2netp` model to generate a fast, low-resolution rough foreground mask.</p>
                 </div>
               </div>
 
               <div className="flex gap-4 items-start">
                 <div className="w-8 h-8 rounded-lg bg-[#bc85ff]/10 flex items-center justify-center flex-shrink-0 text-[#bc85ff] font-bold text-xs">2</div>
                 <div>
-                  <h4 className="font-bold text-white mb-1">ONNX Execution</h4>
-                  <p className="text-xs leading-relaxed">The tensor is passed through the u2netp model via a multi-threaded ONNX Runtime session with Level 3 graph optimizations enabled. The model outputs a probability map representing foreground confidence per pixel.</p>
+                  <h4 className="font-bold text-white mb-1">Intermediate Background Pre-cleaning</h4>
+                  <p className="text-xs leading-relaxed">The Phase 1 mask is scaled to original dimensions. Background pixels are replaced with solid white while keeping foreground colors, creating a pre-cleaned, high-contrast intermediate image ready for fine-tuning.</p>
                 </div>
               </div>
 
               <div className="flex gap-4 items-start">
-                <div className="w-8 h-8 rounded-lg bg-[#3fb950]/10 flex items-center justify-center flex-shrink-0 text-[#3fb950] font-bold text-xs">3</div>
+                <div className="w-8 h-8 rounded-lg bg-[#9b51e0]/10 flex items-center justify-center flex-shrink-0 text-[#9b51e0] font-bold text-xs">3</div>
                 <div>
-                  <h4 className="font-bold text-white mb-1">Postprocessing</h4>
-                  <p className="text-xs leading-relaxed">The 320×320 probability mask is clamped to [0,1], scaled to 8-bit grayscale, resized back to the original image dimensions, and mapped onto the alpha channel of the original RGBA image. The result is encoded as a transparent PNG.</p>
+                  <h4 className="font-bold text-white mb-1">Phase 2: High-Resolution Refinement (RMBG-1.4)</h4>
+                  <p className="text-xs leading-relaxed">The intermediate image is upscaled to 1024×1024, normalized to [-0.5, +0.5], and processed by `BRIA RMBG-1.4`. Because the background is pre-cleaned, the model concentrates its segmentation power on fine borders and transparency gradients.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 items-start">
+                <div className="w-8 h-8 rounded-lg bg-[#3fb950]/10 flex items-center justify-center flex-shrink-0 text-[#3fb950] font-bold text-xs">4</div>
+                <div>
+                  <h4 className="font-bold text-white mb-1">Min-Max Normalization & Compositing</h4>
+                  <p className="text-xs leading-relaxed">RMBG-1.4 raw output logits are normalized to [0, 1], resized to match the original image, and mapped onto the original image's alpha channel, outputting a high-fidelity transparent PNG.</p>
                 </div>
               </div>
             </div>

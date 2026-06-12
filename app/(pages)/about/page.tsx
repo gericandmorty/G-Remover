@@ -24,9 +24,9 @@ export default function AboutPage() {
     {
       category: "AI & Image Processing",
       items: [
-        { name: "ONNX Runtime (ort v2)", desc: "Microsoft's cross-platform inference engine running the U2-Net model natively in Rust with Level 3 graph optimizations." },
-        { name: "U2-Net (u2netp)", desc: "Lightweight salient object detection model. Input is normalized to 320×320, output is a per-pixel foreground probability map." },
-        { name: "ndarray v0.17", desc: "N-dimensional array library for tensor construction. Handles the 1×3×320×320 float tensor fed into ONNX Runtime." },
+        { name: "ONNX Runtime (ort v2)", desc: "Microsoft's cross-platform inference engine running the RMBG-1.4 model natively in Rust with Level 3 graph optimizations." },
+        { name: "BRIA RMBG-1.4", desc: "ISNet-based high-accuracy background removal model trained on 12k+ labelled images. Input is normalized to 1024×1024, output is a per-pixel raw logit map that is min-max normalized before alpha compositing." },
+        { name: "ndarray v0.17", desc: "N-dimensional array library for tensor construction. Handles the 1×3×1024×1024 float tensor fed into ONNX Runtime." },
         { name: "image crate v0.25", desc: "Handles decoding PNG, JPEG, and WebP uploads, bilinear resize, RGBA compositing, and final PNG encoding." },
       ],
     },
@@ -46,7 +46,7 @@ export default function AboutPage() {
     { method: "GET",  path: "/api/info",                  desc: "Returns app version, framework, runtime, and all registered routes." },
     { method: "POST", path: "/api/auth/register",         desc: "Creates a new user. Validates email, enforces password rules (8+ chars, uppercase, number, special char), hashes with bcrypt." },
     { method: "POST", path: "/api/auth/login",            desc: "Verifies credentials, checks bcrypt hash, and returns a signed JWT valid for 24 hours." },
-    { method: "POST", path: "/api/v1/remove-background",  desc: "Accepts PNG/JPEG/WebP up to 10MB. Runs U2-Net inference via ONNX Runtime. Returns transparent PNG. Auth is optional. Rate-limited to 10 req/min." },
+    { method: "POST", path: "/api/v1/remove-background",  desc: "Accepts PNG/JPEG/WebP up to 10MB. Runs RMBG-1.4 (ISNet) inference at 1024×1024 via ONNX Runtime. Returns transparent PNG. Auth is optional. Rate-limited to 10 req/min." },
   ];
 
   const methodColor: Record<string, string> = {

@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState("");
+  const [processingPhase, setProcessingPhase] = useState<"" | "1" | "2">("");
   const [progress, setProgress] = useState(0);
   const [outputUrl, setOutputUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -91,17 +92,24 @@ export default function DashboardPage() {
 
   const startProgressTicker = () => {
     setProgress(0);
-    const steps = [
-      { p: 15, s: "Uploading image..." },
-      { p: 35, s: "Parsing image buffer..." },
-      { p: 55, s: "Isolating foreground contours..." },
-      { p: 90, s: "Generating transparency channel..." },
+    // Steps mirror the actual backend two-phase pipeline:
+    // Phase 1 → u2netp fast rough cut (320×320)
+    // Phase 2 → RMBG-1.4 refined cleanup (1024×1024)
+    const steps: { p: number; s: string; phase: "" | "1" | "2" }[] = [
+      { p: 10, s: "Uploading source image...",                       phase: "" },
+      { p: 22, s: "Decompressing and validating pixels...",           phase: "" },
+      { p: 38, s: "Executing Phase 1: Rough segmentation (u2netp)...",    phase: "1" },
+      { p: 55, s: "Extracting low-resolution foreground mask...",  phase: "1" },
+      { p: 68, s: "Preparing intermediate alpha matte...",    phase: "2" },
+      { p: 82, s: "Executing Phase 2: High-resolution refinement (RMBG-1.4)...", phase: "2" },
+      { p: 93, s: "Compositing final transparency channel...",  phase: "2" },
     ];
     steps.forEach((step, i) => {
       setTimeout(() => {
         setProgress(step.p);
         setProcessingStep(step.s);
-      }, (i + 1) * 400);
+        setProcessingPhase(step.phase);
+      }, (i + 1) * 600);
     });
   };
 
@@ -109,6 +117,7 @@ export default function DashboardPage() {
     setIsProcessing(true);
     setOutputUrl(null);
     setError(null);
+    setProcessingPhase("");
     startProgressTicker();
 
     try {
@@ -386,16 +395,60 @@ export default function DashboardPage() {
                       />
 
                       {isProcessing && (
-                        <div className="absolute inset-0 bg-[#0d1117]/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3.5 z-20">
-                          <div className="w-8 h-8 rounded-full border-[3px] border-[#30363d] border-t-[#58a6ff] animate-spin" />
-                          <div className="text-xs font-semibold text-white">{processingStep}</div>
-                          <div className="w-40 h-1 bg-[#21262d] rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-[#58a6ff] to-[#bc85ff] rounded-full transition-all duration-500"
-                              style={{ width: `${progress}%` }}
-                            />
+                        <div className="absolute inset-0 bg-[#0d1117]/90 backdrop-blur-md flex flex-col items-center justify-center gap-5 z-20 px-6">
+                          {/* Premium Minimal Spinner */}
+                          <div className="relative flex items-center justify-center w-12 h-12">
+                            <svg className="w-12 h-12 animate-spin text-[#30363d]" viewBox="0 0 24 24" fill="none">
+                              <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" />
+                              <path
+                                className={`transition-colors duration-500 ${
+                                  processingPhase === "2" ? "text-[#bc85ff]" : "text-[#58a6ff]"
+                                }`}
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              />
+                            </svg>
                           </div>
-                          <div className="text-[10px] text-[#8b949e] font-mono">{progress}%</div>
+
+                          {/* Phase badge/label - Clean and uppercase */}
+                          <div className="flex flex-col items-center gap-2">
+                            <span
+                              className={`text-[9px] font-bold tracking-widest uppercase px-2.5 py-0.5 rounded-md border transition-all duration-500 ${
+                                processingPhase === "2"
+                                  ? "text-[#bc85ff] bg-[#bc85ff]/5 border-[#bc85ff]/20"
+                                  : processingPhase === "1"
+                                  ? "text-[#58a6ff] bg-[#58a6ff]/5 border-[#58a6ff]/20"
+                                  : "text-[#8b949e] bg-[#21262d]/40 border-[#30363d]"
+                              }`}
+                            >
+                              {processingPhase === "2"
+                                ? "Phase 2 · Edge Refinement"
+                                : processingPhase === "1"
+                                ? "Phase 1 · Rough Segmentation"
+                                : "Initializing Pipeline"}
+                            </span>
+                            
+                            {/* Step label */}
+                            <span className="text-[11px] text-[#c9d1d9] text-center font-medium leading-relaxed max-w-[240px]">
+                              {processingStep}
+                            </span>
+                          </div>
+
+                          {/* Unified Progress Bar */}
+                          <div className="w-56 flex flex-col gap-2 mt-1">
+                            <div className="w-full h-[3px] bg-[#21262d] rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-[#58a6ff] to-[#bc85ff] rounded-full transition-all duration-500"
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-[9px] text-[#8b949e] font-mono tracking-wider">
+                              <span className="uppercase">
+                                {processingPhase ? `Phase ${processingPhase}` : "Preparing"}
+                              </span>
+                              <span>{progress}%</span>
+                            </div>
+                          </div>
                         </div>
                       )}
 
