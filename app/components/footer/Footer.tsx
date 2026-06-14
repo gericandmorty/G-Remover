@@ -47,11 +47,13 @@ export default function Footer() {
         </div>
 
         {/* Right: Site Navigation Links */}
-        <div className="flex gap-6 font-semibold">
+        <div className="flex flex-wrap gap-4 sm:gap-6 font-semibold justify-center md:justify-end">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
           <Link href="/docs" className="hover:text-white transition-colors">Docs</Link>
           <Link href="/about" className="hover:text-white transition-colors">About</Link>
+          <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy</Link>
+          <Link href="/terms-of-service" className="hover:text-white transition-colors">Terms</Link>
         </div>
       </div>
     </footer>
